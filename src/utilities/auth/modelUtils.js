@@ -1,11 +1,31 @@
 const bcrypt = require("bcryptjs");
 
+const onlyEmailFind = (userModel) => {
+  return (userModel.statics.findByEmail = async function (email, password) {
+    const user = await this.findOne({ email });
+    // console.log(email, password);
+    console.log(user);
+    console.log(password);
+    if (user) {
+      const isMatch = await bcrypt.compare(password, user.password);
+      console.log(isMatch);
+      if (isMatch) {
+        return user;
+      } else {
+        return null;
+      }
+    } else {
+      return null;
+    }
+  });
+};
+
 const findMethod = (userModel) => {
   return (userModel.statics.findByCredentials = async function (
-    username,
+    email,
     password
   ) {
-    const user = await this.findOne({ username });
+    const user = await this.findOne({ email });
 
     if (user) {
       const isMatch = await bcrypt.compare(password, user.password);
@@ -26,8 +46,6 @@ const jsonMethod = (userModel, properties) => {
     const userObj = user.toObject();
 
     properties.forEach((property) => delete userObj[property]);
-    // delete userObj.password;
-    // delete userObj.__v;
 
     return userObj;
   });
@@ -43,4 +61,4 @@ const preSave = (userModel) => {
   });
 };
 
-module.exports = { findMethod, jsonMethod, preSave };
+module.exports = { findMethod, jsonMethod, preSave, onlyEmailFind };

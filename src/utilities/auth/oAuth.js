@@ -1,9 +1,12 @@
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const FacebookStrategy = require("passport-facebook").Strategy;
+const GithubStrategy = require("passport-github2").Strategy;
+const LinkedInStrategy = require("passport-linkedin-oauth2").Strategy;
 const UserModel = require("../../services/user/model");
 const { authenticate } = require("./tokenTools");
 
+//GOOGLE
 passport.use(
   "google",
   new GoogleStrategy(
@@ -18,9 +21,8 @@ passport.use(
         googleId: profile.id,
         firstName: profile.name.givenName,
         lastName: profile.name.familyName,
-        username: profile.displayName,
         email: profile.emails[0].value,
-        role: "user",
+        role: "student",
         refresh_tokens: [],
       };
 
@@ -49,7 +51,7 @@ passport.use(
     }
   )
 );
-
+//FACEBOOK
 passport.use(
   "facebook",
   new FacebookStrategy(
@@ -71,9 +73,8 @@ passport.use(
         facebookId: profile.id,
         firstName: profile.name.givenName,
         lastName: profile.name.familyName,
-        username: profile.displayName,
         email: profile.emails[0].value,
-        role: "user",
+        role: "student",
         refresh_tokens: [],
       };
       try {
@@ -93,6 +94,77 @@ passport.use(
 
           const tokens = await authenticate(createdUser);
           done(null, { user, tokens });
+        }
+      } catch (error) {
+        done(error);
+      }
+    }
+  )
+);
+//GITHUB
+passport.use(
+  "github",
+  new GithubStrategy(
+    {
+      clientID: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      callbackURL: process.env.GITHUB_CALLBACK_URL,
+      scope: ["user:email"],
+    },
+    async function (accessToken, refreshToken, profile, done) {
+      console.log(profile);
+
+      try {
+        const user = await UserModel.findOne({
+          email: profile.emails[0].value,
+        });
+        if (user) {
+          if (!user.githubId) {
+            user.githubId = profile.id;
+            user.githubUsername = profile.username;
+            await user.save();
+          }
+          const tokens = await authenticate(user);
+          done(null, { user, tokens });
+        } else {
+          done(error);
+        }
+      } catch (error) {
+        done(error);
+      }
+    }
+  )
+);
+//LINKEDIN
+passport.use(
+  "linkedin",
+  new LinkedInStrategy(
+    {
+      clientID: process.env.LINKEDIN_KEY,
+      clientSecret: process.env.LINKEDIN_SECRET,
+      callbackURL: process.env.LINKEDIN_REDIRECT_URL,
+      scope: ["r_emailaddress", "r_liteprofile"],
+    },
+    async function (accessToken, refreshToken, profile, done) {
+      console.log(profile);
+      // process.nextTick(function () {
+      //   console.log("line 151", profile);
+
+      //   return done(null, profile);
+      // });
+      try {
+        const user = await UserModel.findOne({
+          email: profile.emails[0].value,
+        });
+        if (user) {
+          if (!user.linkedInId) {
+            user.linkedInId = profile.id;
+            await user.save();
+          }
+          const tokens = await authenticate(user);
+          done(null, { user, tokens });
+        } else {
+          done(error);
         }
       } catch (error) {
         done(error);

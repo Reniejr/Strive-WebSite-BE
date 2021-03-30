@@ -27,7 +27,7 @@ const auth = async (req, res, next) => {
 };
 
 const adminOnly = async (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
+  if (req.body.user && req.body.user.role === "admin") {
     next();
   } else {
     const err = new Error();
@@ -42,15 +42,15 @@ const socialAuthRedirect = async (req, res, next) => {
     //WITH COOKIES
     // res.cookie("accessToken", req.user.tokens.access_token, {
     //   httpOnly: true,
-    // })
+    // });
     // res.cookie("refreshToken", req.user.tokens.refresh_token, {
     //   httpOnly: true,
     //   path: "/users/refreshToken",
-    // })
-    // res.redirect(`${process.env.FE_URL_DEV}/home`)
+    // });
+    // res.redirect(`${process.env.FE_URL_DEV}/home`);
     // console.log(req.user);
     res.redirect(
-      `${process.env.FE_URL_DEV}/#/home?access_token=${req.user.tokens.access_token}`
+      `${process.env.FE_URL_DEV}/sign-in/${req.user._id}?access_token=${req.user.tokens.access_token}`
     );
   } catch (error) {
     next(error);

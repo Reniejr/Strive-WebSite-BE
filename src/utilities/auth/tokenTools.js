@@ -7,8 +7,7 @@ const generateJWT = (payload, secret) =>
       payload,
       secret,
       {
-        expiresIn:
-          secret === process.env.JWT_ACCESS_TOKEN_SECRET ? "15m" : "30m",
+        expiresIn: secret === process.env.JWT_ACCESS_TOKEN_SECRET ? "1h" : "2h",
       },
       (err, token) => {
         if (err) rej(err);
@@ -26,6 +25,7 @@ const validateJWT = (token, secret) =>
   );
 
 const authenticate = async (user) => {
+  console.log(user);
   try {
     const access_token = await generateJWT(
       { _id: user._id },
@@ -40,7 +40,7 @@ const authenticate = async (user) => {
     return { access_token, refresh_token };
   } catch (error) {
     console.log(error);
-    next(error);
+    // next(error);
   }
 };
 

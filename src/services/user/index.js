@@ -1,14 +1,44 @@
 const userRoute = require("express").Router(),
+  passport = require("passport"),
+  generator = require("generate-password"),
+  sgMail = require("@sendgrid/mail"),
+  { eMail, welcomeMsg } = require("../../utilities/email"),
   UserModel = require("./model"),
   { auth, adminOnly, socialAuthRedirect } = require("../../utilities/auth"),
   { authenticate, refreshTokens } = require("../../utilities/auth/tokenTools"),
-  passport = require("passport");
+  { userUpload } = require("../../utilities/cloudinary");
 
 //ENDPOINTS
+//POST
 userRoute.route("/").post(async (req, res, next) => {
+  try {
+    const newPwd = generator.generate({ length: 10, numbers: true });
+    const newUser = await UserModel({ ...req.body, password: newPwd }),
+      { _id } = await newUser.save();
+
+    //SEND EMAIL
+    sgMail.setApiKey(`${process.env.SENDGRID_API_KEY}`);
+    const emailContent = eMail(
+      req.body.email,
+      "developer.reniejr@gmail.com",
+      `Welcome to Strive School`,
+      newPwd
+    );
+
+    // console.log(emailContent);
+    await sgMail.send(emailContent);
+
+    res.send(newUser);
+  } catch (err) {
+    next(err);
+  }
+});
+//POST
+userRoute.route("/admin-register").post(async (req, res, next) => {
   try {
     const newUser = await UserModel(req.body),
       { _id } = await newUser.save();
+
     res.send(newUser);
   } catch (err) {
     next(err);
@@ -18,9 +48,24 @@ userRoute.route("/").post(async (req, res, next) => {
 //GET TOKENS
 userRoute.route("/authorize").post(async (req, res, next) => {
   try {
-    const { username, password } = req.body;
-    const user = await UserModel.findByCredentials(username, password);
+    console.log(req.body);
+    const { email, password } = req.body;
+    const user = await UserModel.findByCredentials(email, password);
     const tokens = await authenticate(user);
+    res.send(tokens);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+});
+//GET FIRST TOKENS
+userRoute.route("/first-authorize").post(async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    console.log(email);
+    const user = await UserModel.findByEmail(email, password);
+    const tokens = await authenticate(user);
+    res.cookie("access_token", tokens.access_token, { httpOnly: true });
     res.send(tokens);
   } catch (err) {
     console.log(err);
@@ -65,6 +110,7 @@ userRoute.route("/profile").put(auth, async (req, res, next) => {
     const updates = Object.keys(req.body);
     updates.forEach((update) => (req.user[update] = req.body[update]));
     await req.user.save();
+    console.log(req.body);
     res.send(req.user);
     res.send(updates);
   } catch (err) {
@@ -100,6 +146,21 @@ userRoute.route("/profile").delete(auth, async (req, res, next) => {
     next(err);
   }
 });
+
+//POST IMAGE
+userRoute
+  .route("/profile-pic")
+  .post(auth, userUpload.single("user"), async (req, res, next) => {
+    try {
+      console.log(req.file);
+      req.user.profile = req.file.path;
+      await req.user.save();
+      res.send(`PROFILE PIC :${req.file.originalname} has been uploaded `);
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  });
 
 //DELETE BY ADMIN
 userRoute
@@ -154,9 +215,10 @@ userRoute.route("/logout").post(auth, async (req, res, next) => {
 //LOGOUT ALL DEVICES
 userRoute.route("/logoutAll").post(auth, async (req, res, next) => {
   try {
-    req.user.refresh_token = [];
+    console.log(req.user);
+    req.user.refresh_tokens = [];
     await req.user.save();
-    // res.send(`User logout`);
+    res.send(`User logout`);
   } catch (err) {
     console.log(err);
     next(err);
@@ -187,6 +249,63 @@ userRoute.get(
   "/facebookRedirect",
   passport.authenticate("facebook"),
   socialAuthRedirect
+);
+
+//GITHUB LOGIN
+userRoute.get(
+  "/gitHubLogin",
+  passport.authenticate("github", { scope: ["user", "email"] })
+);
+
+//GITHUB REDIRECT
+userRoute.get(
+  "/gitHubRedirect",
+  passport.authenticate("github"),
+  async (req, res, next) => {
+    try {
+      res.cookie("validate", true, { httpOnly: false });
+      res.cookie("github", true, { httpOnly: false });
+      // console.log(req.user);
+      res.redirect(`${process.env.FE_URL_DEV}/sign-in/${req.user.user._id}`);
+    } catch (error) {
+      res.redirect(`${process.env.FE_URL_DEV}/login`);
+      console.log(error);
+      next(error);
+    }
+  }
+);
+
+//LINKEDIN LOGIN
+userRoute.get(
+  "/linkedInLogin",
+  // passport.authenticate("linkedin", {
+  //   scope: ["r_emailaddress", "r_liteprofile"],
+  // })
+  passport.authenticate("linkedin", {
+    state: ["SOME STATE"],
+  }),
+  function (req, res) {}
+);
+
+//LINKEDIN REDIRECT
+userRoute.get(
+  "/linkedInRedirect",
+  passport.authenticate("linkedin"),
+  async (req, res, next) => {
+    try {
+      res.cookie("validate", true, { httpOnly: false });
+      res.cookie("linkedin", true, { httpOnly: false });
+      res.cookie("access_token", req.user.tokens.access_token, {
+        httpOnly: true,
+      });
+
+      res.redirect(`${process.env.FE_URL_DEV}/sign-in/${req.user.user._id}`);
+    } catch (error) {
+      res.redirect(`${process.env.FE_URL_DEV}/login`);
+      console.log(error);
+      next(error);
+    }
+  }
 );
 
 module.exports = userRoute;
