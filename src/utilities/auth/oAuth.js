@@ -112,7 +112,7 @@ passport.use(
       scope: ["user:email"],
     },
     async function (accessToken, refreshToken, profile, done) {
-      console.log(profile);
+      // console.log(profile);
 
       try {
         const user = await UserModel.findOne({
@@ -146,7 +146,7 @@ passport.use(
       scope: ["r_emailaddress", "r_liteprofile"],
     },
     async function (accessToken, refreshToken, profile, done) {
-      console.log(profile);
+      // console.log(profile);
       // process.nextTick(function () {
       //   console.log("line 151", profile);
 
@@ -161,7 +161,20 @@ passport.use(
             user.linkedInId = profile.id;
             await user.save();
           }
-          const tokens = await authenticate(user);
+          user.studentInfo.linkedInStatus = {
+            ...user.studentInfo.linkedInStatus,
+            linkedInPic: profile.photos[0].value,
+            firstName: profile.name.givenName,
+            lastName: profile.name.familyName,
+          };
+          user.markModified("studentInfo");
+          await user.save();
+          // const tokens = await authenticate(user);
+          const tokens = {
+            access_token: accessToken,
+          };
+          console.log(user);
+          // console.log("riga 170", tokens);
           done(null, { user, tokens });
         } else {
           done(error);

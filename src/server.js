@@ -23,7 +23,11 @@ const server = express(),
   accessOrigin =
     process.env.NODE_ENV === "production"
       ? [process.env.FE_URL_DEV, process.env.FE_URL_PROD]
-      : [process.env.FE_URL_DEV, "http://localhost:3001"],
+      : [
+          process.env.FE_URL_DEV,
+          "http://localhost:3001",
+          process.env.FE_URL_PROD,
+        ],
   corsOptions = {
     origin: function (origin, callback) {
       if (accessOrigin.indexOf(origin) !== -1 || !origin) {

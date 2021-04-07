@@ -7,14 +7,22 @@ const userRoute = require("express").Router(),
   { auth, adminOnly, socialAuthRedirect } = require("../../utilities/auth"),
   { authenticate, refreshTokens } = require("../../utilities/auth/tokenTools"),
   { userUpload } = require("../../utilities/cloudinary");
+const ClassRoomModel = require("../classRoom/model");
+const mongoose = require("mongoose");
 
 //ENDPOINTS
 //POST
-userRoute.route("/").post(async (req, res, next) => {
+userRoute.route("/new-user/:batchId").post(async (req, res, next) => {
   try {
     const newPwd = generator.generate({ length: 10, numbers: true });
     const newUser = await UserModel({ ...req.body, password: newPwd }),
       { _id } = await newUser.save();
+
+    //UPDATE CLASSROOM
+    let editClass = await ClassRoomModel.findOneAndUpdate(
+      { _id: mongoose.Types.ObjectId(req.params.batchId) },
+      { $addToSet: { studentList: { _id } } }
+    );
 
     //SEND EMAIL
     sgMail.setApiKey(`${process.env.SENDGRID_API_KEY}`);
@@ -36,7 +44,7 @@ userRoute.route("/").post(async (req, res, next) => {
 //POST
 userRoute.route("/admin-register").post(async (req, res, next) => {
   try {
-    const newUser = await UserModel(req.body),
+    const newUser = await UserModel({ ...req.body, studentInfo: undefined }),
       { _id } = await newUser.save();
 
     res.send(newUser);
@@ -48,7 +56,7 @@ userRoute.route("/admin-register").post(async (req, res, next) => {
 //GET TOKENS
 userRoute.route("/authorize").post(async (req, res, next) => {
   try {
-    console.log(req.body);
+    // console.log(req.body);
     const { email, password } = req.body;
     const user = await UserModel.findByCredentials(email, password);
     const tokens = await authenticate(user);
@@ -62,10 +70,9 @@ userRoute.route("/authorize").post(async (req, res, next) => {
 userRoute.route("/first-authorize").post(async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    console.log(email);
+    // console.log(email);
     const user = await UserModel.findByEmail(email, password);
     const tokens = await authenticate(user);
-    res.cookie("access_token", tokens.access_token, { httpOnly: true });
     res.send(tokens);
   } catch (err) {
     console.log(err);
@@ -152,7 +159,7 @@ userRoute
   .route("/profile-pic")
   .post(auth, userUpload.single("user"), async (req, res, next) => {
     try {
-      console.log(req.file);
+      // console.log(req.file);
       req.user.profile = req.file.path;
       await req.user.save();
       res.send(`PROFILE PIC :${req.file.originalname} has been uploaded `);
@@ -263,12 +270,16 @@ userRoute.get(
   passport.authenticate("github"),
   async (req, res, next) => {
     try {
-      res.cookie("validate", true, { httpOnly: false });
-      res.cookie("github", true, { httpOnly: false });
+      // res.cookie("validate", true, { httpOnly: false });
+      // res.cookie("github", true, { httpOnly: false });
       // console.log(req.user);
-      res.redirect(`${process.env.FE_URL_DEV}/sign-in/${req.user.user._id}`);
+      res.redirect(
+        `${process.env.FE_URL_DEV}/sign-in/${req.user.user._id}?validate=true&github=true`
+      );
     } catch (error) {
-      res.redirect(`${process.env.FE_URL_DEV}/login`);
+      res.redirect(
+        `${process.env.FE_URL_DEV}/sign-in/${req.user.user._id}?validate=true&github=false`
+      );
       console.log(error);
       next(error);
     }
@@ -293,15 +304,19 @@ userRoute.get(
   passport.authenticate("linkedin"),
   async (req, res, next) => {
     try {
-      res.cookie("validate", true, { httpOnly: false });
-      res.cookie("linkedin", true, { httpOnly: false });
-      res.cookie("access_token", req.user.tokens.access_token, {
-        httpOnly: true,
-      });
+      // res.cookie("validate", true, { httpOnly: false });
+      // res.cookie("linkedin", true, { httpOnly: false });
+      // res.cookie("access_token", req.user.tokens.access_token, {
+      //   httpOnly: true,
+      // });
 
-      res.redirect(`${process.env.FE_URL_DEV}/sign-in/${req.user.user._id}`);
+      res.redirect(
+        `${process.env.FE_URL_DEV}/sign-in/${req.user.user._id}?access_token=${req.user.tokens.access_token}&validate=true&linkedin=true`
+      );
     } catch (error) {
-      res.redirect(`${process.env.FE_URL_DEV}/login`);
+      res.redirect(
+        `${process.env.FE_URL_DEV}/sign-in/${req.user.user._id}?validate=true&linkedin=false`
+      );
       console.log(error);
       next(error);
     }

@@ -4,11 +4,11 @@ const onlyEmailFind = (userModel) => {
   return (userModel.statics.findByEmail = async function (email, password) {
     const user = await this.findOne({ email });
     // console.log(email, password);
-    console.log(user);
-    console.log(password);
+    // console.log(user);
+    // console.log(password);
     if (user) {
       const isMatch = await bcrypt.compare(password, user.password);
-      console.log(isMatch);
+      // console.log(isMatch);
       if (isMatch) {
         return user;
       } else {

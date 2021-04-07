@@ -49,9 +49,10 @@ const socialAuthRedirect = async (req, res, next) => {
     // });
     // res.redirect(`${process.env.FE_URL_DEV}/home`);
     // console.log(req.user);
-    res.redirect(
-      `${process.env.FE_URL_DEV}/sign-in/${req.user._id}?access_token=${req.user.tokens.access_token}`
-    );
+    console.log(req.user.tokens);
+    // res.redirect(
+    //   `${process.env.FE_URL_DEV}/sign-in/${req.user._id}/?access_token=${req.user.tokens.access_token}`
+    // );
   } catch (error) {
     next(error);
   }

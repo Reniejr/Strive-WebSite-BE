@@ -18,6 +18,7 @@ const UserModel = new Schema(
       required: true,
       enum: ["admin", "teacher", "student"],
     },
+    course: { type: String, enum: ["Web", "AI"] },
     profile: { type: String },
     occupation: { type: String },
     refresh_tokens: [{ token: { type: String } }],
@@ -27,44 +28,57 @@ const UserModel = new Schema(
     githubUsername: { type: String },
     linkedInId: { type: String },
     studentInfo: {
-      course: { type: String },
-      batch: { type: String },
-      section: { type: String },
-      attendance: [
-        {
-          module: { type: String },
-          day: { type: String },
-          date: { type: String },
-          present: { type: Boolean },
-          topics: { type: String },
+      type: {
+        course: { type: String },
+        batch: { type: String },
+        section: { type: String },
+        attendance: [
+          {
+            module: { type: String },
+            day: { type: String },
+            date: { type: String },
+            present: { type: Boolean },
+            topics: { type: String },
+          },
+        ],
+        homeworks: [
+          {
+            module: { type: String },
+            day: { type: String },
+            task: Schema.Types.Mixed,
+            githubRepo: { type: String },
+            completed: { type: Boolean },
+          },
+        ],
+        linkedInStatus: {
+          connections: [{ type: Number }],
+          linkedInPic: { type: String },
+          firstName: { type: String },
+          lastName: { type: String },
+          address: { type: String },
+          birthDate: { type: String },
+          refresh_tokens: [{ type: String }],
         },
-      ],
-      homeworks: [
-        {
-          module: { type: String },
-          day: { type: String },
-          task: Schema.Types.Mixed,
-          githubRepo: { type: String },
-          completed: { type: Boolean },
-        },
-      ],
-      linkedInStatus: {
-        connections: [{ type: Number }],
-        linkedInPic: { type: String },
-        firstName: { type: String },
-        lastName: { type: String },
-        address: { type: String },
-        birthDate: { type: String },
+        exams: [Schema.Types.Mixed],
       },
-      exams: [Schema.Types.Mixed],
+      required: isStudent,
     },
   },
   { timestamps: true }
 );
 
+function isStudent() {
+  if (this.role === "student") {
+    return true;
+  }
+  return false;
+}
+
 onlyEmailFind(UserModel);
 findMethod(UserModel);
 jsonMethod(UserModel, ["password", "__v"]);
 preSave(UserModel);
+
+// UserModel.set("studentInfo", undefined, { strict: false });
 
 module.exports = mongoose.model("User", UserModel);

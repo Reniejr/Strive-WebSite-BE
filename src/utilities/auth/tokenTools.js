@@ -25,7 +25,7 @@ const validateJWT = (token, secret) =>
   );
 
 const authenticate = async (user) => {
-  console.log(user);
+  // console.log(user);
   try {
     const access_token = await generateJWT(
       { _id: user._id },

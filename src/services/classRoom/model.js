@@ -9,6 +9,18 @@ const ClassRoomModel = new Schema(
     status: { type: String, enum: ["not started", "on going", "ended"] },
     studentList: [{ type: Schema.Types.ObjectId, ref: "User" }],
     teacherList: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    lessons: [
+      {
+        module: { type: String },
+        day: { type: String },
+        topic: { type: String },
+        liveLink: { type: String },
+        recordedLink: { type: String },
+        codeLink: { type: String },
+        homework: { type: String },
+        hwLink: { type: String },
+      },
+    ],
   },
   { timestamps: true }
 );
