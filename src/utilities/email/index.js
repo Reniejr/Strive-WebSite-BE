@@ -27,7 +27,9 @@ const eMail = (receiver, sender, subject, text) => {
       text: `Hello and Welcome to Strive School,
         Please sign-in to our official website to monitor your achievements and todo lists during our course.
         Here we provide you a temporarily password, please change it after the sign-in:
-        ${text}`,
+        ${text}
+        Join us quickly: http://localhost:3000/login
+        `,
     },
   };
   return emailContent;
@@ -48,4 +50,21 @@ const rejectMsg = () => {
   `;
 };
 
-module.exports = { eMail, welcomeMsg, rejectMsg };
+const eMailTest = (receiver, sender, subject, id) => {
+  const emailContent = {
+    to: receiver,
+    from: sender,
+    subject: subject,
+    templateId: "d-22fc8a4e3a044422b9870713e2e9d801",
+    dynamic_template_data: {
+      subject: subject,
+      name: "Welcome to Strive School",
+      text: `Hello From Welcome to Strive School,
+      As you asked for joining us in a new journey of coding this is the test you have to take in order to start this journey
+      http://localhost:3000/benchmark/exam/${id}`,
+    },
+  };
+  return emailContent;
+};
+
+module.exports = { eMail, welcomeMsg, rejectMsg, eMailTest };
