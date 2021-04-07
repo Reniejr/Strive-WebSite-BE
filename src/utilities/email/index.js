@@ -28,7 +28,7 @@ const eMail = (receiver, sender, subject, text) => {
         Please sign-in to our official website to monitor your achievements and todo lists during our course.
         Here we provide you a temporarily password, please change it after the sign-in:
         ${text}
-        Join us quickly: http://localhost:3000/login
+        Join us quickly: https://strive-school.herokuapp.com/login
         `,
     },
   };
@@ -61,7 +61,7 @@ const eMailTest = (receiver, sender, subject, id) => {
       name: "Welcome to Strive School",
       text: `Hello From Welcome to Strive School,
       As you asked for joining us in a new journey of coding this is the test you have to take in order to start this journey
-      http://localhost:3000/benchmark/exam/${id}`,
+      https://strive-school.herokuapp.com/benchmark/exam/${id}`,
     },
   };
   return emailContent;
