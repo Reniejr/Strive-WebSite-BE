@@ -36,9 +36,11 @@ const UserModel = new Schema(
           {
             module: { type: String },
             day: { type: String },
-            date: { type: String },
             present: { type: Boolean },
-            topics: { type: String },
+            topic: { type: String },
+            liveLink: { type: String },
+            recordedLink: { type: String },
+            codeLink: { type: String },
           },
         ],
         homeworks: [
