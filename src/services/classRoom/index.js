@@ -21,7 +21,9 @@ classRoute.route("/").post(adminOnly, async (req, res, next) => {
 //GET
 classRoute.route("/").get(async (req, res, next) => {
   try {
-    const classRoomList = await ClassRoomModel.find();
+    const classRoomList = await ClassRoomModel.find()
+      .populate("studentList")
+      .populate("teacherList");
     res.send(classRoomList);
   } catch (error) {
     console.log(error);
